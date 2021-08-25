@@ -19,6 +19,9 @@ public interface Renderer {
      */
     void done();
 
+    // horizontal line
+    void hr();
+
     // Headings
     void h1(TextNode texts);
     void h2(TextNode texts);

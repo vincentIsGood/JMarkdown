@@ -34,6 +34,12 @@ public class SimpleRenderer implements Renderer{
         
     }
 
+    // Horizontal line
+    public void hr(){
+        body.add(new Container("hr", ""));
+        System.out.println("hr");
+    }
+
     // Headings
     public void h1(TextNode texts){
         body.add(new Container("h1", texts));

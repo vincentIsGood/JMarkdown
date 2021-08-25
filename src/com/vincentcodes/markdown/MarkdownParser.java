@@ -67,12 +67,13 @@ public class MarkdownParser{
      * Includes the current char
      * @return null if eof is reached
      */
-    private String peekUntilLineEnd(int startOffset){
+    public String peekUntilLineEnd(int startOffset){
         if(currentIndex+startOffset+1 >= text.length()) 
             return null;
         int cIndex = currentIndex + startOffset;
         int startingIndex = cIndex;
         while(text.charAt(cIndex++) != '\n'){
+            // importantly "cIndex == text.length()"
             if(cIndex >= text.length()){
                 cIndex++;
                 break;
@@ -96,7 +97,7 @@ public class MarkdownParser{
      */
     private String peekNChar(int n){
         if(n <= 0) return null;
-        if(currentIndex + n >= text.length())
+        if(currentIndex + n > text.length())
             return null;
         return text.substring(currentIndex, currentIndex + n);
     }
@@ -232,6 +233,7 @@ public class MarkdownParser{
         
         renderer.body();
         for(; currentChar() != 0; ){
+            if(parseHrLine()) continue;
             if(parseHeading()) continue;
             if(parseQuoteBlock()) continue;
             if(parseOrderedListItem()) continue;
@@ -243,6 +245,19 @@ public class MarkdownParser{
             next();
         }
         renderer.done();
+    }
+    private boolean parseHrLine(){
+        String peek4Char = peekNChar(4);
+        if(peek4Char == null) 
+            return false;
+        if((currentChar() == '-' && peekNChar(4).equals("---\n"))
+        || (currentChar() == '*' && peekNChar(4).equals("***\n"))
+        || (currentChar() == '_' && peekNChar(4).equals("___\n"))){
+            renderer.hr();
+            next();next();next();next();
+            return true;
+        }
+        return false;
     }
     private boolean parseHeading(){
         if(currentChar() == '#'){
@@ -410,7 +425,8 @@ public class MarkdownParser{
             }
             codeBlock.deleteCharAt(codeBlock.length()-1); // delete '\n'
             renderer.codeblock(codeBlock.toString(), lang);
-            next();
+            if(currentChar() == '\n')
+                next();
             return true;
         }
         return false;
@@ -443,11 +459,15 @@ public class MarkdownParser{
                 //// Specific to parse() because parse() has next() itself
                 if(terminateOnOneNewLine) 
                     break;
-                // for ol and ul, I have to use Regex here for simplicity
+                // for ol and ul, I have to use Regex here to look ahead for simplicity
                 // read until the next bullet point / item
                 if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^[0-9]{1,}\\. (.*)"))
                     break;
                 if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^[-\\*+] (.*)"))
+                    break;
+                if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^#(.*)"))
+                    break;
+                if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^>(.*)"))
                     break;
                 //// End
 

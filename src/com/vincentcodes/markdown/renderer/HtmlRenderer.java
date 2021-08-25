@@ -116,6 +116,12 @@ public class HtmlRenderer implements Renderer {
         currentStyle = new TextGroup();
     }
 
+    // Horizontal line
+    @Override
+    public void hr(){
+        builder.append("<hr>");
+    }
+
     // Headings
     @Override
     public void h1(TextNode texts){

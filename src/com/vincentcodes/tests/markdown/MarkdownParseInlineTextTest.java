@@ -80,7 +80,6 @@ public class MarkdownParseInlineTextTest {
         assertEquals("momomia", result.groups.get(1).desc);
         assertEquals("https://google.com", result.groups.get(1).url);
         assertTrue(result.groups.get(1).isEmphasis);
-        assertTrue(result.groups.get(1).isLink);
         assertTrue(result.groups.get(1).isImage);
 
         assertEquals("a", result.groups.get(2).value);
