@@ -469,6 +469,8 @@ public class MarkdownParser{
                     break;
                 if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^>(.*)"))
                     break;
+                if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^```(.*)"))
+                    break;
                 //// End
 
                 // offset 1 to skip '\n'
