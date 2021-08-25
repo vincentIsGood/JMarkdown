@@ -493,6 +493,10 @@ public class MarkdownParser{
                 continue; // do not add char to buffer
             if(parseDoubleAsterisk(node, inEffect, builder))
                 continue;
+            if(parseSingleUnderscore(node, inEffect, builder))
+                continue;
+            if(parseDoubleUnderscore(node, inEffect, builder))
+                continue;
             if(parseDoubleTilde(node, inEffect, builder))
                 continue;
             if(parseInlineCode(node, inEffect, builder))
@@ -538,7 +542,37 @@ public class MarkdownParser{
                 inEffect.isEmphasis = true;
                 return true;
             }else if(inEffect.isEmphasis){
-                // turn it off if '*' is alone without a pair
+                // turn it off
+                createGroupToNode(node, inEffect, builder);
+                inEffect.isEmphasis = false;
+                return true;
+            }
+        }
+        return false;
+    }
+    private boolean parseDoubleUnderscore(TextNode node, TextGroup inEffect, StringBuilder builder){
+        if(currentChar() == '_' && peekNextChar() == '_'){
+            if(!inEffect.isStrong && canReachPair("__")){
+                createGroupToNode(node, inEffect, builder);
+                inEffect.isStrong = true;
+                next(); // skip 2nd '_'
+                return true;
+            }else if(inEffect.isStrong){
+                createGroupToNode(node, inEffect, builder);
+                inEffect.isStrong = false;
+                next();
+                return true;
+            }
+        }
+        return false;
+    }
+    private boolean parseSingleUnderscore(TextNode node, TextGroup inEffect, StringBuilder builder){
+        if(currentChar() == '_' && peekNextChar() != '_'){
+            if(!inEffect.isEmphasis && canReachPair('_')){
+                createGroupToNode(node, inEffect, builder); // before setting
+                inEffect.isEmphasis = true;
+                return true;
+            }else if(inEffect.isEmphasis){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isEmphasis = false;
                 return true;
