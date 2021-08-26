@@ -10,6 +10,7 @@ package com.vincentcodes.markdown.inline;
  * </pre>
  */
 public class TextGroup {
+    // I can create some properties class and a List<Prop> to make it scale better
     public boolean isStrong = false;
     public boolean isEmphasis = false;
     public boolean isStrikeThrough = false;

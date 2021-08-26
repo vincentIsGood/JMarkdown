@@ -111,6 +111,12 @@ public class MarkdownParser{
         return text.charAt(currentIndex + 1);
     }
 
+    private char peekPreviousChar(){
+        if(currentIndex - 1 < 0)
+            return 0;
+        return text.charAt(currentIndex - 1);
+    }
+
     private void next(){
         currentIndex++;
     }
@@ -120,6 +126,10 @@ public class MarkdownParser{
         (currentChar() == ' ' || currentChar() == '\t')){
             next();
         }
+    }
+
+    private boolean isSpace(int index){
+        return text.charAt(index) == ' ' || text.charAt(index) == '\t' || text.charAt(index) == '\n';
     }
 
     /**
@@ -179,26 +189,42 @@ public class MarkdownParser{
         return matchingCharIndex;
     }
     /**
+     * Can reach another char to form a pair
      * '`' and '\n' acts as a barrier
      */
-    private boolean canReachPair(char c){
-        int pairPos;
+    private boolean canReachChar(char c, boolean ignoreCharAfterSpace){
         int codeInlinePos = findCharOnSameLine('`', currentIndex + 1);
+        int pairPos = findCharOnSameLine(c, currentIndex + 1);
+
+        boolean leftIsSpace = (pairPos - 1 >= 0 && isSpace(pairPos-1)) || pairPos - 1 < 0;
+        while(ignoreCharAfterSpace && pairPos != -1 && leftIsSpace){
+            pairPos = findCharOnSameLine(c, pairPos + 1);
+            leftIsSpace = (pairPos - 1 >= 0 && isSpace(pairPos-1)) || pairPos - 1 < 0;
+        }
+        
+        // eol also counts as space
+        boolean rightIsSpace = (pairPos + 1 < text.length() && isSpace(pairPos+1)) || pairPos + 1 >= text.length();
+        boolean isSurroundedBySpaces = leftIsSpace && rightIsSpace;
+        
         if(codeInlinePos != -1)
-            return (pairPos = findCharOnSameLine(c, currentIndex + 1)) != -1
-            && codeInlinePos > pairPos;
-        return findCharOnSameLine(c, currentIndex + 1) != -1;
+            return pairPos != -1 && codeInlinePos > pairPos && !isSurroundedBySpaces;
+        return pairPos != -1 && !isSurroundedBySpaces;
     }
     /**
+     * Can reach another String to form a pair
      * '`' and '\n'  acts as a barrier
      */
-    private boolean canReachPair(String c){
-        int pairPos;
+    public boolean canReachStr(String c){
         int codeInlinePos = findCharOnSameLine('`', currentIndex + 1);
+        int pairPos = findStrOnSameLine(c, currentIndex + 1);
+
+        // eol also counts as space
+        boolean leftIsSpace = (pairPos - 1 >= 0 && isSpace(pairPos-1)) || pairPos - 1 < 0;
+        boolean rightIsSpace = (pairPos+c.length() < text.length() && isSpace(pairPos+c.length())) || pairPos+c.length() >= text.length();
+        boolean isSurroundedBySpaces = leftIsSpace && rightIsSpace;
         if(codeInlinePos != -1)
-            return (pairPos = findStrOnSameLine(c, currentIndex + 1)) != -1
-            && codeInlinePos > pairPos;
-        return findStrOnSameLine(c, currentIndex + 1) != -1;
+            return pairPos != -1 && codeInlinePos > pairPos && !isSurroundedBySpaces;
+        return pairPos != -1 && !isSurroundedBySpaces;
     }
     private int numOfCharInString(String str, char c){
         int counter = 0;
@@ -455,6 +481,20 @@ public class MarkdownParser{
         StringBuilder builder = new StringBuilder();
         for(; currentIndex < text.length(); next()){
             // Return if a newline and the next newline is empty is reached
+            if(currentChar() == '\\'){
+                switch(peekNextChar()){
+                    case '!': case '"': case '\'': case '#': case '$': case '%':
+                    case '&': case '(': case ')': case '*': case '+': case '-':
+                    case ',': case '.': case '/': case ':': case ';': case '<':
+                    case '>': case '=': case '?': case '@': case '[': case ']':
+                    case '^': case '_': case '`': case '{': case '}': case '|':
+                    case '~':
+                        next();
+                        builder.append(currentChar());
+                        continue;
+                }
+            }
+
             if(currentChar() == '\n'){
                 //// Specific to parse() because parse() has next() itself
                 if(terminateOnOneNewLine) 
@@ -521,9 +561,26 @@ public class MarkdownParser{
     /**
      * @return successful or not
      */
+    private boolean parseSingleAsterisk(TextNode node, TextGroup inEffect, StringBuilder builder){
+        boolean isSurroundedBySpaces = peekPreviousChar() == ' ' && peekNextChar() == ' ';
+        if(currentChar() == '*' && peekNextChar() != '*' && !isSurroundedBySpaces){
+            if((!inEffect.isEmphasis && canReachChar('*', true))){
+                createGroupToNode(node, inEffect, builder); // before setting
+                inEffect.isEmphasis = true;
+                return true;
+            }else if(inEffect.isEmphasis){
+                // turn it off
+                createGroupToNode(node, inEffect, builder);
+                inEffect.isEmphasis = false;
+                return true;
+            }
+        }
+        return false;
+    }
     private boolean parseDoubleAsterisk(TextNode node, TextGroup inEffect, StringBuilder builder){
-        if(currentChar() == '*' && peekNextChar() == '*'){
-            if(!inEffect.isStrong && canReachPair("**")){
+        boolean isSurroundedWithSpaces = peekPreviousChar() == ' ' && (peekNChar(3) != null && peekNChar(3).charAt(2) == ' ');
+        if(currentChar() == '*' && peekNextChar() == '*' && !isSurroundedWithSpaces){
+            if(!inEffect.isStrong && canReachStr("**")){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isStrong = true;
                 next(); // skip 2nd '*'
@@ -537,14 +594,15 @@ public class MarkdownParser{
         }
         return false;
     }
-    private boolean parseSingleAsterisk(TextNode node, TextGroup inEffect, StringBuilder builder){
-        if(currentChar() == '*' && peekNextChar() != '*'){
-            if(!inEffect.isEmphasis && canReachPair('*')){
+    private boolean parseSingleUnderscore(TextNode node, TextGroup inEffect, StringBuilder builder){
+        boolean isSurroundedBySpaces = peekPreviousChar() == ' ' && peekNextChar() == ' ';
+        boolean isSurroundedByAlphaNum = Character.toString(peekPreviousChar()).matches("[0-9a-zA-Z_]") && Character.toString(peekNextChar()).matches("[0-9a-zA-Z_]");
+        if(currentChar() == '_' && peekNextChar() != '_' && !(isSurroundedBySpaces || isSurroundedByAlphaNum)){
+            if(!inEffect.isEmphasis && canReachChar('_', true)){
                 createGroupToNode(node, inEffect, builder); // before setting
                 inEffect.isEmphasis = true;
                 return true;
             }else if(inEffect.isEmphasis){
-                // turn it off
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isEmphasis = false;
                 return true;
@@ -553,8 +611,10 @@ public class MarkdownParser{
         return false;
     }
     private boolean parseDoubleUnderscore(TextNode node, TextGroup inEffect, StringBuilder builder){
-        if(currentChar() == '_' && peekNextChar() == '_'){
-            if(!inEffect.isStrong && canReachPair("__")){
+        boolean isSurroundedBySpaces = peekPreviousChar() == ' ' && (peekNChar(3) != null && peekNChar(3).charAt(2) == ' ');
+        boolean isSurroundedByAlphaNum = Character.toString(peekPreviousChar()).matches("[0-9a-zA-Z]") && peekNChar(3) != null && Character.toString(peekNChar(3).charAt(2)).matches("[0-9a-zA-Z]");
+        if(currentChar() == '_' && peekNextChar() == '_' && !(isSurroundedBySpaces || isSurroundedByAlphaNum)){
+            if(!inEffect.isStrong && canReachStr("__")){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isStrong = true;
                 next(); // skip 2nd '_'
@@ -568,23 +628,10 @@ public class MarkdownParser{
         }
         return false;
     }
-    private boolean parseSingleUnderscore(TextNode node, TextGroup inEffect, StringBuilder builder){
-        if(currentChar() == '_' && peekNextChar() != '_'){
-            if(!inEffect.isEmphasis && canReachPair('_')){
-                createGroupToNode(node, inEffect, builder); // before setting
-                inEffect.isEmphasis = true;
-                return true;
-            }else if(inEffect.isEmphasis){
-                createGroupToNode(node, inEffect, builder);
-                inEffect.isEmphasis = false;
-                return true;
-            }
-        }
-        return false;
-    }
     private boolean parseDoubleTilde(TextNode node, TextGroup inEffect, StringBuilder builder){
-        if(currentChar() == '~' && peekNextChar() == '~'){
-            if(!inEffect.isStrikeThrough && canReachPair("~~")){
+        boolean isSurroundedBySpaces = peekPreviousChar() == ' ' && (peekNChar(3) != null && peekNChar(3).charAt(2) == ' ');
+        if(currentChar() == '~' && peekNextChar() == '~' && !isSurroundedBySpaces){
+            if(!inEffect.isStrikeThrough && canReachStr("~~")){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isStrikeThrough = true;
                 next(); // skip 2nd '~'
