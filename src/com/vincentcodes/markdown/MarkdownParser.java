@@ -488,7 +488,7 @@ public class MarkdownParser{
                     case ',': case '.': case '/': case ':': case ';': case '<':
                     case '>': case '=': case '?': case '@': case '[': case ']':
                     case '^': case '_': case '`': case '{': case '}': case '|':
-                    case '~':
+                    case '~': case '\\':
                         next();
                         builder.append(currentChar());
                         continue;
