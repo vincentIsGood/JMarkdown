@@ -15,6 +15,8 @@ import com.vincentcodes.ooxml.word.WordParagraph;
 import com.vincentcodes.ooxml.word.WordTable;
 import com.vincentcodes.ooxml.word.WordTextStyles;
 
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+
 public class OoxmlWordRenderer implements Renderer{
     private File outputFile;
     private File themeFile;
@@ -175,11 +177,18 @@ public class OoxmlWordRenderer implements Renderer{
 
     @Override
     public void codeblock(String text, String lang) {
-        WordParagraph para = document.createParagraph();
+        WordTable table = document.createTable();
+        // lower level stuff
+        
+        XWPFTableCell codeBlock = table.getRaw().createRow().addNewTableCell();
+        codeBlock.removeParagraph(0); // clear it
+        table.setBgColorForCell(0, 0, "e7e6e6");
+
         String[] lines = text.split("(\r)?\n");
         for(String line : lines){
+            WordParagraph para = new WordParagraph(codeBlock.addParagraph());
             para.insertText(line);
-            para.insertLineBreak();
+            para.setSpacingAfter(0);
         }
     }
 

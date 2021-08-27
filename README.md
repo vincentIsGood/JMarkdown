@@ -2,7 +2,7 @@
 
 A Java markdown library is created with an objective to provide an easy interface to convert Markdown syntax to other syntax. A simple Markdown to Html renderer is provided. Hope everyone can find it useful.
 
-Since this the MarkdownParser is still in development, there could be bugs.
+Since the MarkdownParser is still in development, there could be bugs.
 
 ## Usage
 
@@ -12,7 +12,7 @@ Compile your java project by including this JMarkdown library in your project's 
 
 Some tests are written inside `src/com/vincentcodes/tests/markdown/`, you may make reference to those.
 
-Within TemplateParsingTest.java
+Within **TemplateParsingTest.java**
 ```java
 public class TemplateParsingTest {
     public static void main(String[] args) throws IOException{
@@ -27,9 +27,9 @@ public class TemplateParsingTest {
 }
 ```
 
-Styles made not be the finest, you may customize it by extending or modifying `OoxmlWordRenderer` class itself.
+Styles I made may not be the finest, you may customize it by extending or modifying `OoxmlWordRenderer` class itself.
 
-Within TemplateParsingToWordTest.java
+Within **TemplateParsingToWordTest.java**
 ```java
 public class TemplateParsingToWordTest {
     public static void main(String[] args) throws IOException{

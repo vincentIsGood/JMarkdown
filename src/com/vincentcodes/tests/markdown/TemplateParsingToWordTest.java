@@ -9,7 +9,7 @@ import com.vincentcodes.markdown.renderer.OoxmlWordRenderer;
 
 public class TemplateParsingToWordTest {
     public static void main(String[] args) throws IOException{
-        try(FileInputStream fis = new FileInputStream("Template.md")){
+        try(FileInputStream fis = new FileInputStream("README.md")){
             MarkdownParser parser = new MarkdownParser(new OoxmlWordRenderer(new File("out.docx"), new File("TemplateWithThemes.docx")));
             parser.parse(new String(fis.readAllBytes()));
         }
