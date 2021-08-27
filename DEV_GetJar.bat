@@ -1,6 +1,6 @@
 @echo off
 
-set jarname=jmarkdown-v2.0.0
+set jarname=jmarkdown-v3.0.0
 set structure=com/vincentcodes/markdown/*
 
 :: cp -r lib/com/ .

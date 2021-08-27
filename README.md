@@ -8,7 +8,7 @@ Since this the MarkdownParser is still in development, there could be bugs.
 
 Compile your java project by including this JMarkdown library in your project's classpath.
 
-## How to use `HtmlRenderer`
+## How to use `HtmlRenderer` or `OoxmlWordRenderer`
 
 Some tests are written inside `src/com/vincentcodes/tests/markdown/`, you may make reference to those.
 
@@ -22,6 +22,20 @@ public class TemplateParsingTest {
 
             HtmlRenderer renderer = (HtmlRenderer)parser.getRenderer();
             System.out.println(renderer.getRenderedHtml());
+        }
+    }
+}
+```
+
+Styles made not be the finest, you may customize it by extending or modifying `OoxmlWordRenderer` class itself.
+
+Within TemplateParsingToWordTest.java
+```java
+public class TemplateParsingToWordTest {
+    public static void main(String[] args) throws IOException{
+        try(FileInputStream fis = new FileInputStream("Template.md")){
+            MarkdownParser parser = new MarkdownParser(new OoxmlWordRenderer(new File("out.docx"), new File("TemplateWithThemes.docx")));
+            parser.parse(new String(fis.readAllBytes()));
         }
     }
 }
