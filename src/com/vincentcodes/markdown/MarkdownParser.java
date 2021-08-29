@@ -432,6 +432,7 @@ public class MarkdownParser{
                         getUntilLineEnd(); // skip the rest of the line
                         nextLine = peekUntilLineEnd(0);
                     }
+                    renderer.endTable();
                     return true;
                 }
             }
