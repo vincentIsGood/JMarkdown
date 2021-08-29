@@ -24,10 +24,15 @@ public class OoxmlWordRenderer implements Renderer{
     private WordDocument document;
     private WordTable table;
 
+    private static WordTextStyles CONSOLAS_FONT = new WordTextStyles();
+
     public OoxmlWordRenderer(){
         this.outputFile = null;
+
+        CONSOLAS_FONT.addFontFamily("Consolas");
     }
     public OoxmlWordRenderer(File outputFile, File themeFile){
+        this();
         this.outputFile = outputFile;
         this.themeFile = themeFile;
         
@@ -49,6 +54,10 @@ public class OoxmlWordRenderer implements Renderer{
         if(group.isStrong) styles.addBold();
         if(group.isEmphasis) styles.addItalic();
         if(group.isStrikeThrough) styles.addStrikeThrough();
+        if(group.isCode) {
+            styles.addFontFamily("Consolas");
+            styles.addColor("C00000"); // dark red
+        }
         // add more custom styles if you want...
         return styles;
     }
@@ -187,7 +196,7 @@ public class OoxmlWordRenderer implements Renderer{
         String[] lines = text.split("(\r)?\n");
         for(String line : lines){
             WordParagraph para = new WordParagraph(codeBlock.addParagraph());
-            para.insertText(line);
+            para.insertText(line, CONSOLAS_FONT);
             para.setSpacingAfter(0);
         }
     }
