@@ -5,10 +5,10 @@ set structure=com/vincentcodes/markdown/*
 
 :: cp -r lib/com/ .
 
-:: with Manifest
-:: cd classes
-:: jar -cvfm %jarname%.jar Manifest.txt %structure%
-:: mv %jarname%.jar ..
+:: with Manifest (for command line)
+cd classes
+jar -cvfm %jarname%.jar Manifest.txt %structure%
+mv %jarname%.jar ..
 
 ::rm -r ../com/
 

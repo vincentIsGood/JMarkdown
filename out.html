@@ -1,0 +1,29 @@
+<html><body><h1>JMarkdown</h1><div></div><div>A Java markdown library is created with an objective to provide an easy interface to convert Markdown syntax to other syntax. A simple Markdown to Html renderer is provided. Hope everyone can find it useful.</div><div>Since this the MarkdownParser is still in development, there could be bugs.</div><h2>Usage</h2><div></div><div>Compile your java project by including this JMarkdown library in your project's classpath.</div><h2>How to use <code>HtmlRenderer</code></h2><div></div><div>Some tests are written inside <code>src/com/vincentcodes/tests/markdown/</code>, you may make reference to those.</div><div>Within TemplateParsingTest.java</div><pre><code class='language-java'>public class TemplateParsingTest {
+    public static void main(String[] args) throws IOException{
+        try(FileInputStream fis = new FileInputStream("Template.md")){
+            MarkdownParser parser = new MarkdownParser(new HtmlRenderer());
+            parser.parse(new String(fis.readAllBytes()));
+
+            HtmlRenderer renderer = (HtmlRenderer)parser.getRenderer();
+            System.out.println(renderer.getRenderedHtml());
+        }
+    }
+}</code></pre><h2>Creating your own Renderer</h2><div></div><div>You can create your own Renderer to convert Markdown to languages. First, you need to <code>implement</code> the <code>Renderer</code> interface.</div><pre><code class='language-java'>public class HtmlRenderer implements Renderer {
+    ...
+}</code></pre><div>After that, let's take a look inside the <code>Renderer</code> interface. There are multiple methods like <code>body()</code>, <code>h1(TextNode)</code>, etc. These functions are called by the parser when it starts parsing (by calling the <code>parse()</code> method). </div><div>For example, when the parser encounters a heading <code>#</code>, <code>h1(TextNode)</code> is called with the <code>TextNode</code> object. <code>TextNode</code> stores information of a group of texts <code>TextGroup</code> each text group has information on the style of the text it stores. Feel free to use <code>TextNode.toString()</code> to observe what they stores.</div><pre><code class='language-java'>public interface Renderer {
+
+    /**
+     * Init
+     */
+    void body();
+
+    /**
+     * Close
+     */
+    void done();
+
+    // Headings
+    void h1(TextNode texts);
+    void h2(TextNode texts);
+    ...
+}</code></pre><div>After that you can include it into your code.</div><pre><code class='language-java'>MarkdownParser parser = new MarkdownParser(new CustomRenderer());</code></pre><h2>Upcoming plans</h2><div></div><ul><li>A command line util will be implemented for markdown to html conversion.</li><li>Markdown to OpenXML renderer will be implemented</li></ul></body></html>
