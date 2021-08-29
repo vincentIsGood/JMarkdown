@@ -2,7 +2,4 @@
 others
 classes/*
 DEV_GetJar_Manual.bat
-
-# Ignore changelog only
-# versions/
-# !versions/changelog.txt
+versions
