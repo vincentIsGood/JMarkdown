@@ -7,7 +7,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.URISyntaxException;
 
 import com.vincentcodes.markdown.MarkdownParser;
 import com.vincentcodes.markdown.renderer.OoxmlWordRenderer;
