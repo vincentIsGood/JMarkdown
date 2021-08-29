@@ -4,11 +4,12 @@ import java.io.File;
 
 /**
  * Handles command like this:
- * jmarkdown-cmdutil-v1.0.0.jar <md2html / md2doc> <in file> <out file>
+ * jmarkdown-cmdutil-vx.y.z.jar <md2html> <in file> [<out file>]
+ * jmarkdown-cmdutil-vx.y.z.jar <md2doc> <in file> [<out file>] [<styles file>]
  */
 public class Main {
     public static void main(String[] args){
-        if(!validateCommand(args)){
+        if(!basicValidate(args)){
             printHelpAndExit();
         }
 
@@ -17,7 +18,7 @@ public class Main {
                 Md2HtmlCmdUtil.handle(args);
                 break;
             case "md2doc":
-                System.out.println("nop");
+                Md2DocCmdUtil.handle(args);
                 break;
             default:
                 printHelpAndExit();
@@ -27,8 +28,8 @@ public class Main {
     /**
      * @return fine or not
      */
-    public static boolean validateCommand(String[] args){
-        if(args.length != 3)
+    public static boolean basicValidate(String[] args){
+        if(args.length < 2)
             return false;
         
         File in = new File(args[1]);
@@ -37,7 +38,10 @@ public class Main {
         return true;
     }
     public static void printHelpAndExit(){
-        System.out.println("jmarkdown-cmdutil-vx.y.z.jar <md2html / md2doc> <in file> <out file>");
+        System.out.println("jmarkdown-cmdutil-vx.y.z.jar <md2html / md2doc> <args>");
+        System.out.println("Details:");
+        System.out.println("jmarkdown-cmdutil-vx.y.z.jar md2html <in file> [<out file>]");
+        System.out.println("jmarkdown-cmdutil-vx.y.z.jar md2doc <in file> [<out file>] [<styles file>]");
         System.exit(-1);
     }
 }

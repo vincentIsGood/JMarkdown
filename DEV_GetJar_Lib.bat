@@ -1,14 +1,15 @@
 @echo off
 
+set cmdjarname=jmarkdown-cmdutil-v1.0.0
 set jarname=jmarkdown-v3.0.0
-set structure=com/vincentcodes/markdown/*
+set structure=*
 
 :: cp -r lib/com/ .
 
 :: with Manifest (for command line)
-cd classes
-jar -cvfm %jarname%.jar Manifest.txt %structure%
-mv %jarname%.jar ..
+:: cd classes
+:: jar -cvfm %cmdjarname%.jar Manifest.txt %structure%
+:: mv %cmdjarname%.jar ..
 
 ::rm -r ../com/
 
