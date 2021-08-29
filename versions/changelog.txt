@@ -1,4 +1,0 @@
-v1.0.0 - First publish to github
-v2.0.0 - Added support to use underscore to style texts with bold and italic. 
-         Horizontal rule is now supported.
-v3.0.0 - Markdown to Ooxml word document is now possible
