@@ -432,6 +432,7 @@ public class MarkdownParser{
                         getUntilLineEnd(); // skip the rest of the line
                         nextLine = peekUntilLineEnd(0);
                     }
+                    renderer.endTable();
                     return true;
                 }
             }
@@ -499,7 +500,7 @@ public class MarkdownParser{
                 //// Specific to parse() because parse() has next() itself
                 if(terminateOnOneNewLine) 
                     break;
-                // for these, I have to use Regex here to look ahead for simplicity
+                // for ol and ul, I have to use Regex here to look ahead for simplicity
                 // read until the next bullet point / item
                 if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^[0-9]{1,}\\. (.*)"))
                     break;
