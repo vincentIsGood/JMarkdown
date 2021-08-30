@@ -304,7 +304,7 @@ public class MarkdownParser{
                 default: renderer.append(repeatChar("#", numOfHash)); break;
             }
             next();
-            if(peekUntilLineEnd(0).equals("")){
+            if(peekUntilLineEnd(0) != null && peekUntilLineEnd(0).equals("")){
                 getUntilLineEnd();
             }
             return true;
@@ -394,54 +394,67 @@ public class MarkdownParser{
         || currentChar() == '+') && peekUntilLineEnd(0).matches("^[-\\*+] (.*)");
     }
     private boolean parseTable(){
-        if(currentChar() == '|'){
-            // look ahead (next() is not used because it may get into the buffer)
-            String line = peekUntilLineEnd(1);
-            int noOfItems = numOfCharInString(line, '|');
-            if(noOfItems > 0){
-                String nextLine = peekUntilLineEnd(line.length()+2); // skip '\n' + offset (1)
-                // -1 is needed to skip the first '|'
-                // bug: | - | a | also counts
-                if(nextLine != null && nextLine.contains("-") && numOfCharInString(nextLine, '|')-1 >= noOfItems){
-                    // Parse headings
-                    next(); // skip '|' (not peek anymore)
-                    TextNode[] headings = new TextNode[noOfItems];
-                    for(int i = 0; i < noOfItems; i++){
-                        headings[i] = parseText('|', true);
-                        if(headings[i].groups.size() > 0){
-                            TextGroup textGroup = headings[i].groups.get(0);
-                            textGroup.value = textGroup.value.trim();
-                        }
-                        next(); next(); // move forward to '|' then go pass '|' (go to next cell)
-                    }
-                    renderer.table(headings);
-                    getUntilLineEnd(); // skip headings
-                    getUntilLineEnd(); // skip |-|-|-|...
-
-                    // make sure each line has the same or more amount of cells 
-                    // (more: excess cells will be skipped)
-                    nextLine = peekUntilLineEnd(0); // do not get until eol because this will move our pointer forward
-                    while(nextLine != null && numOfCharInString(nextLine, '|')-1 >= noOfItems){
-                        TextNode[] nodes = new TextNode[noOfItems];
-                        next(); // skip '|'
-                        for(int i = 0; i < noOfItems; i++){
-                            nodes[i] = parseText('|', true);
-                            if(nodes[i].groups.size() > 0){
-                                TextGroup textGroup = nodes[i].groups.get(0);
-                                textGroup.value = textGroup.value.trim();
-                            }
-                            next(); next(); // move forward to '|' then go pass '|' (go to next cell)
-                        }
-                        renderer.tr(nodes);
-                        getUntilLineEnd(); // skip the rest of the line
-                        nextLine = peekUntilLineEnd(0);
-                    }
-                    renderer.endTable();
-                    return true;
-                }
-            }
+        String currentLine = peekUntilLineEnd(0);
+        if(currentLine == null) 
+            return false;
+        
+        if(currentChar() == '|' || 
+        (currentLine.matches("([^\n\\|]{1,}\\|){1,}([^\n\\|]{1,})?") 
+        && peekUntilLineEnd(currentLine.length()+1).matches("([- ]{1,}\\|){1,}([- ]{1,})?"))){
+            return parseNormalTable(currentLine);
         }
         return false;
+    }
+    private boolean parseNormalTable(String currentLine){
+        boolean stripPipes = false;
+
+        // No trailing noise are allowed, ie. "|a|b|asd12346?" is not allowed
+        if(currentLine.startsWith("|") && currentLine.endsWith("|")){
+            stripPipes = true;
+        }
+
+        // Parse headings
+        TextNode[] headings = parseTableRow(currentLine, stripPipes, -1);
+        int numOfCells = headings.length;
+        renderer.table(headings);
+        getUntilLineEnd(); // skip "|-|-|-...|" or "-|-|-|-..."
+
+        String nextLine;
+        while((nextLine = peekUntilLineEnd(0)) != null && ((nextLine.startsWith("|") && numOfCharInString(nextLine, '|')-1 >= numOfCells) 
+        || nextLine.matches("([^\n\\|]{1,}\\|){1,}([^\n\\|]{1,})?"))){
+            TextNode[] trCells = parseTableRow(nextLine, stripPipes, numOfCells);
+            renderer.tr(trCells);
+        }
+        renderer.endTable();
+        return true;
+    }
+    /**
+     * @param noOfCells -1 if you want to compute it on the fly
+     */
+    private TextNode[] parseTableRow(String peekedLine, boolean stripPipes, int noOfCells){
+        if(stripPipes){
+            // To be a little bit more flexible
+            int startIndex = 1;
+            if(!peekedLine.startsWith("|")){
+                startIndex = 0;
+            }else 
+                next(); // skip '|' in real pointer
+            peekedLine = peekedLine.substring(startIndex, peekedLine.lastIndexOf("|")-1);
+        }
+        
+        TextNode[] cellsValue = new TextNode[noOfCells == -1? numOfCharInString(peekedLine, '|')+1 : noOfCells];
+        for(int i = 0; i < cellsValue.length; i++){
+            cellsValue[i] = parseText('|', true);
+            if(cellsValue[i].groups.size() > 0){
+                TextGroup textGroup = cellsValue[i].groups.get(0);
+                textGroup.value = textGroup.value.trim();
+            }
+            if(i < cellsValue.length-1){
+                next(); next(); // move forward to '|' then go pass '|' (go to next cell)
+            }
+        }
+        getUntilLineEnd(); // skip the rest of the line
+        return cellsValue;
     }
     private boolean parseCodeBlock(){
         if(peekNChar(3) != null && peekNChar(3).equals("```")){
@@ -553,12 +566,19 @@ public class MarkdownParser{
             if(parseInlineImage(node, inEffect, builder))
                 continue;
             
+            // Just in case pointer lands on `additionalTerminator` after some parsing the above functions
+            if(additionalTerminator != '\0' && currentChar() == additionalTerminator){
+                currentIndex--; // promised to not include the current char
+                break;
+            }
+            
             builder.append(currentChar());
 
             //// Specific to parse()
             // Additional term is used: Do not next() into the terminator
-            if(additionalTerminator != '\0' && peekNextChar() == additionalTerminator)
+            if(additionalTerminator != '\0' && peekNextChar() == additionalTerminator){
                 break;
+            }
         }
         createGroupToNode(node, inEffect.copy(), builder);
         return node;
@@ -588,7 +608,7 @@ public class MarkdownParser{
             if(!inEffect.isStrong && canReachStr("**")){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isStrong = true;
-                next(); // skip 2nd '*'
+                next(); // goto 2nd '*'
                 return true;
             }else if(inEffect.isStrong){
                 createGroupToNode(node, inEffect, builder);
@@ -622,7 +642,7 @@ public class MarkdownParser{
             if(!inEffect.isStrong && canReachStr("__")){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isStrong = true;
-                next(); // skip 2nd '_'
+                next(); // goto 2nd '_'
                 return true;
             }else if(inEffect.isStrong){
                 createGroupToNode(node, inEffect, builder);
@@ -639,7 +659,7 @@ public class MarkdownParser{
             if(!inEffect.isStrikeThrough && canReachStr("~~")){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isStrikeThrough = true;
-                next(); // skip 2nd '~'
+                next(); // goto 2nd '~'
                 return true;
             }else if(inEffect.isStrikeThrough){
                 createGroupToNode(node, inEffect, builder);

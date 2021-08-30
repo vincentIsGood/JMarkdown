@@ -26,7 +26,6 @@ Let's say you have a style file named `styles_and_themes.docx`, then the command
 java -jar jmarkdown-cmdutil-vx.y.z.jar md2doc -i in.md -o out.docx --styles styles_and_themes.docx
 ```
 
-
 ## Library Usage
 
 Compile your java project by including this JMarkdown library in your project's classpath.
