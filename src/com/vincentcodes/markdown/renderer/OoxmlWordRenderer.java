@@ -18,6 +18,8 @@ import com.vincentcodes.ooxml.word.WordTextStyles;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 
 public class OoxmlWordRenderer implements Renderer{
+    private boolean createToc = false;
+
     private File outputFile;
     private File themeFile;
 
@@ -76,6 +78,10 @@ public class OoxmlWordRenderer implements Renderer{
         }
     }
 
+    public void createTOC(){
+        createToc = true;
+    }
+
     @Override
     public void body() {
         if(outputFile != null && themeFile != null){
@@ -84,6 +90,10 @@ public class OoxmlWordRenderer implements Renderer{
             document = new WordDocument(outputFile);
         }else
             document = new WordDocument();
+
+        if(createToc){
+            document.createTOCPage();
+        }
     }
 
     @Override

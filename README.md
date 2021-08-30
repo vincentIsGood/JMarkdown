@@ -4,6 +4,7 @@ A Java markdown library is created with an objective to provide an easy interfac
 
 Since the MarkdownParser is still in development, there could be bugs.
 
+
 ## Command line usage
 
 `jmarkdown-cmdutil-vx.y.z.jar` is released. And The general syntax for the command line is as follows.
@@ -11,6 +12,7 @@ Since the MarkdownParser is still in development, there could be bugs.
 ```sh
 java -jar jmarkdown-cmdutil-vx.y.z.jar <md2html / md2doc> in.md out.ext
 ```
+
 
 Markdown to ooxml word is a little bit different, there is an additional optional argument called `[<styles file>]`. The parser will open the file and read the pre-defined styles from the .docx file. Since the generator relies on pre-defined header styles, you need to named them in form of `Header#`. For example `Header1`, `Header2`, so on and so forth. 
 
@@ -20,9 +22,11 @@ Let's say you have a style file named `styles_and_themes.docx`, then the command
 java -jar jmarkdown-cmdutil-vx.y.z.jar md2doc in.md out.docx styles_and_themes.docx
 ```
 
+
 ## Library Usage
 
 Compile your java project by including this JMarkdown library in your project's classpath.
+
 
 ## How to use `HtmlRenderer` or `OoxmlWordRenderer`
 
@@ -56,6 +60,7 @@ public class TemplateParsingToWordTest {
     }
 }
 ```
+
 
 ## Creating your own Renderer
 
@@ -96,6 +101,7 @@ After that you can include it into your code.
 ```java
 MarkdownParser parser = new MarkdownParser(new CustomRenderer());
 ```
+
 
 ## Upcoming plans
 

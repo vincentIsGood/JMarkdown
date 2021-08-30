@@ -1,7 +1,7 @@
 @echo off
 
-set cmdjarname=jmarkdown-cmdutil-v1.0.0
-set jarname=jmarkdown-v3.0.0
+set cmdjarname=jmarkdown-cmdutil-v2.0.0
+set jarname=jmarkdown-v3.0.2
 set structure=*
 
 :: cp -r lib/com/ .

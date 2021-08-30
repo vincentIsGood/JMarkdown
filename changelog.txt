@@ -1,4 +1,12 @@
+Library
 v1.0.0 - First publish to github
 v2.0.0 - Added support to use underscore to style texts with bold and italic. 
          Horizontal rule is now supported.
 v3.0.0 - Markdown to Ooxml word document is now possible
+v3.0.1 - md2doc style changes
+v3.0.2 - an empty new line after any types of heading will not be translated as a new line.
+
+
+Cmd
+v1.0.0 - md2html and md2doc are available for use
+v2.0.0 - command line overhaul

@@ -10,29 +10,44 @@ import java.io.UncheckedIOException;
 
 import com.vincentcodes.markdown.MarkdownParser;
 import com.vincentcodes.markdown.renderer.OoxmlWordRenderer;
+import com.vincentcodes.util.commandline.Command;
 
+/**
+ * jmarkdown-cmdutil-vx.y.z.jar md2doc <in file> [<out file>] [<toc? true / false>] [<styles file>]
+ */
 public class Md2DocCmdUtil {
     /**
      * @return successful or not
      */
-    public static void handle(String[] args){
-        try(FileInputStream fis = new FileInputStream(args[1])){
+    public static void handle(Command cmd){
+        if(!cmd.hasOption("-i"))
+            Main.printHelpAndExit();
+        
+        try(FileInputStream fis = new FileInputStream(cmd.getOptionValue("-i"))){
+            OoxmlWordRenderer renderer;
             MarkdownParser parser;
-
-            if(args.length == 4){
-                File styles = new File(args[3]);
-                if(!styles.isFile() || !styles.getName().endsWith(".docx"))
-                    throw new IllegalArgumentException(args[3] + " is not a valid style file");
-                parser = new MarkdownParser(new OoxmlWordRenderer(new File(args[2]), styles));
+            
+            File out;
+            if(cmd.hasOption("-o")){
+                out = new File(cmd.getOptionValue("-o"));
             }else{
-                File tmpFile = loadInJarStyle();
-                if(args.length == 3){
-                    parser = new MarkdownParser(new OoxmlWordRenderer(new File(args[2]), tmpFile));
-                }else{
-                    parser = new MarkdownParser(new OoxmlWordRenderer(new File("out.docx"), tmpFile));
-                }
+                out = new File("out.docx");
             }
 
+            File style;
+            if(cmd.hasOption("--styles")){
+                style = new File(cmd.getOptionValue("--styles"));
+            }else{
+                style = loadInJarStyle();
+            }
+
+            renderer = new OoxmlWordRenderer(out, style);
+
+            if(cmd.hasOption("--toc")){
+                renderer.createTOC();
+            }
+
+            parser = new MarkdownParser(renderer);
             parser.parse(new String(fis.readAllBytes()));
             System.out.println("File created");
         }catch(FileNotFoundException ignored){

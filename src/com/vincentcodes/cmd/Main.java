@@ -1,6 +1,8 @@
 package com.vincentcodes.cmd;
 
-import java.io.File;
+import com.vincentcodes.util.commandline.Command;
+import com.vincentcodes.util.commandline.CommandLineParser;
+import com.vincentcodes.util.commandline.ParserConfig;
 
 /**
  * Handles command like this:
@@ -8,40 +10,37 @@ import java.io.File;
  * jmarkdown-cmdutil-vx.y.z.jar <md2doc> <in file> [<out file>] [<styles file>]
  */
 public class Main {
+    private static ParserConfig config;
+
     public static void main(String[] args){
-        if(!basicValidate(args)){
+        config = new ParserConfig();
+        config.addOption("-h", true, "print help");
+        config.addOption("-o", false, "<file>", "output file");
+        config.addOption("-i", false, "<file>", "input file");
+        config.addOption("--styles", false, "<file>", "style file with .docx file extension");
+        config.addOption("--toc", true, "create table of contents (for ooxml word only)");
+
+        CommandLineParser parser = new CommandLineParser(config);
+        Command result = parser.parse(args);
+
+        if(result.hasOption("-h")){
             printHelpAndExit();
         }
 
-        switch(args[0]){
+        switch(result.getParameter(0)){
             case "md2html":
-                Md2HtmlCmdUtil.handle(args);
+                Md2HtmlCmdUtil.handle(result);
                 break;
             case "md2doc":
-                Md2DocCmdUtil.handle(args);
+                Md2DocCmdUtil.handle(result);
                 break;
             default:
                 printHelpAndExit();
         }
     }
-
-    /**
-     * @return fine or not
-     */
-    public static boolean basicValidate(String[] args){
-        if(args.length < 2)
-            return false;
-        
-        File in = new File(args[1]);
-        if(!in.isFile())
-            throw new IllegalArgumentException(args[1] + " is not a file");
-        return true;
-    }
     public static void printHelpAndExit(){
-        System.out.println("jmarkdown-cmdutil-vx.y.z.jar <md2html / md2doc> <args>");
-        System.out.println("Details:");
-        System.out.println("jmarkdown-cmdutil-vx.y.z.jar md2html <in file> [<out file>]");
-        System.out.println("jmarkdown-cmdutil-vx.y.z.jar md2doc <in file> [<out file>] [<styles file>]");
+        System.out.println("jmarkdown-cmdutil-vx.y.z.jar <md2html / md2doc> [options]");
+        System.out.println(config.getOptionsHelpString());
         System.exit(-1);
     }
 }

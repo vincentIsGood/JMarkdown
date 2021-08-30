@@ -8,14 +8,18 @@ import java.io.UncheckedIOException;
 
 import com.vincentcodes.markdown.MarkdownParser;
 import com.vincentcodes.markdown.renderer.HtmlRenderer;
+import com.vincentcodes.util.commandline.Command;
 
 public class Md2HtmlCmdUtil {
     /**
      * @return successful or not
      */
-    public static void handle(String[] args){
-        try(FileInputStream fis = new FileInputStream(args[1]);
-            FileOutputStream fos = new FileOutputStream(args[2])){
+    public static void handle(Command cmd){
+        if(!cmd.hasOption("-i"))
+            Main.printHelpAndExit();
+        
+        try(FileInputStream fis = new FileInputStream(cmd.getOptionValue("-i"));
+            FileOutputStream fos = new FileOutputStream(cmd.hasOption("-o")? cmd.getOptionValue("-o") : "out.html")){
             HtmlRenderer renderer = new HtmlRenderer();
             MarkdownParser parser = new MarkdownParser(renderer);
             parser.parse(new String(fis.readAllBytes()));

@@ -303,6 +303,10 @@ public class MarkdownParser{
                 case 6: renderer.h6(parseText(true)); break;
                 default: renderer.append(repeatChar("#", numOfHash)); break;
             }
+            next();
+            if(peekUntilLineEnd(0).equals("")){
+                getUntilLineEnd();
+            }
             return true;
         }
         return false;
