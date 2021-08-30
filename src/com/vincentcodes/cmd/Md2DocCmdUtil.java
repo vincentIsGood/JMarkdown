@@ -46,6 +46,9 @@ public class Md2DocCmdUtil {
             if(cmd.hasOption("--toc")){
                 renderer.createTOC();
             }
+            if(cmd.hasOption("--extern")){
+                renderer.enableExternalResources();
+            }
 
             parser = new MarkdownParser(renderer);
             parser.parse(new String(fis.readAllBytes()));

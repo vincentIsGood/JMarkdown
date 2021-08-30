@@ -19,6 +19,7 @@ public class Main {
         config.addOption("-i", false, "<file>", "input file");
         config.addOption("--styles", false, "<file>", "style file with .docx file extension");
         config.addOption("--toc", true, "create table of contents (for ooxml word only)");
+        config.addOption("--extern", true, "enable fetching images from the internet (for ooxml word only)");
 
         CommandLineParser parser = new CommandLineParser(config);
         Command result = parser.parse(args);

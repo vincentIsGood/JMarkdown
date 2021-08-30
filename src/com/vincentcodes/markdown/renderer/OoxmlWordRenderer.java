@@ -2,8 +2,11 @@ package com.vincentcodes.markdown.renderer;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +24,7 @@ import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 
 public class OoxmlWordRenderer implements Renderer{
     private boolean createToc = false;
+    private boolean disableExternalResources = true;
 
     private File outputFile;
     private File themeFile;
@@ -43,6 +47,9 @@ public class OoxmlWordRenderer implements Renderer{
         if(themeFile != null && !themeFile.isFile()){
             throw new IllegalArgumentException("Invalid theme file");
         }
+    }
+    public void enableExternalResources(){
+        disableExternalResources = false;
     }
 
     private String textNodeToString(TextNode text){
@@ -70,22 +77,11 @@ public class OoxmlWordRenderer implements Renderer{
         for(TextGroup g : texts.groups){
             // do not fully support images yet
             if(g.isImage){
-                if(!g.url.startsWith("data:"))
-                    continue;
-                int colonIndex = g.url.indexOf(':');
-                int semicolonIndex = g.url.indexOf(';');
-                int comma = g.url.indexOf(',');
-                if(colonIndex == -1 || semicolonIndex == -1 || comma == -1)
-                    continue;
-                String imageType = g.url.substring(colonIndex+1, semicolonIndex).toLowerCase();
-                ByteArrayInputStream bais = new ByteArrayInputStream(Base64.getDecoder().decode(g.url.substring(comma+1)));
                 try{
-                    if(imageType.endsWith("png")){
-                        para.insertPng(bais, "", 150);
-                    }else if(imageType.endsWith("jpeg")){
-                        para.insertJpeg(bais, "", 150);
-                    }else if(imageType.endsWith("gif")){
-                        para.insertGif(bais, "", 150);
+                    if(!addImageFromDataUriScheme(g, para)){
+                        if(!addImageFromLocal(g, para)){
+                            addImageFromRemote(g, para);
+                        }
                     }
                 }catch(IOException e){
                     throw new UncheckedIOException(e);
@@ -100,6 +96,67 @@ public class OoxmlWordRenderer implements Renderer{
             }else
                 para.insertText(g.value, getTextStyles(g));
         }
+    }
+    private boolean addImageFromLocal(TextGroup g, WordParagraph para) throws IOException{
+        if(g.url.startsWith("http") || g.url.startsWith("https"))
+            return false;
+        File img = new File(g.url);
+        if(!img.isFile())
+            return false;
+        String imageName = img.getName();
+        if(imageName.endsWith("png") || imageName.endsWith("jpeg")
+        || imageName.endsWith("jpg") || imageName.endsWith("gif")){
+            FileInputStream fis = new FileInputStream(img);
+            if(imageName.endsWith("png")){
+                para.insertPng(fis, "", 150);
+            }else if(imageName.endsWith("jpeg") || imageName.endsWith("jpg")){
+                para.insertJpeg(fis, "", 150);
+            }else if(imageName.endsWith("gif")){
+                para.insertGif(fis, "", 150);
+            }
+            return true;
+        }
+        return false;
+    }
+    private boolean addImageFromRemote(TextGroup g, WordParagraph para) throws IOException{
+        if(!g.url.startsWith("http") || !g.url.startsWith("https"))
+            return false;
+
+        if(disableExternalResources){
+            System.out.println("[*] Fetching external resources is disabled. Skipping image");
+            return false;
+        }
+        URL remoteImage = new URL(g.url);
+        URLConnection connection = remoteImage.openConnection();
+        connection.setReadTimeout(30 * 1000); // wait for 30s for the connection
+        String imageType = connection.getContentType();
+        if(imageType.endsWith("png")){
+            para.insertPng(connection.getInputStream(), "", 150);
+        }else if(imageType.endsWith("jpeg")){
+            para.insertJpeg(connection.getInputStream(), "", 150);
+        }else if(imageType.endsWith("gif")){
+            para.insertGif(connection.getInputStream(), "", 150);
+        }
+        return true;
+    }
+    private boolean addImageFromDataUriScheme(TextGroup g, WordParagraph para) throws IOException{
+        if(!g.url.startsWith("data:"))
+            return false;
+        int colonIndex = g.url.indexOf(':');
+        int semicolonIndex = g.url.indexOf(';');
+        int comma = g.url.indexOf(',');
+        if(colonIndex == -1 || semicolonIndex == -1 || comma == -1)
+            return false;
+        String imageName = g.url.substring(colonIndex+1, semicolonIndex).toLowerCase();
+        ByteArrayInputStream bais = new ByteArrayInputStream(Base64.getDecoder().decode(g.url.substring(comma+1)));
+        if(imageName.endsWith("png")){
+            para.insertPng(bais, "", 150);
+        }else if(imageName.endsWith("jpeg")){
+            para.insertJpeg(bais, "", 150);
+        }else if(imageName.endsWith("gif")){
+            para.insertGif(bais, "", 150);
+        }
+        return true;
     }
 
     public void createTOC(){
