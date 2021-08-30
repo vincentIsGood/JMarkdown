@@ -1,8 +1,10 @@
 package com.vincentcodes.markdown.renderer;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -15,9 +17,7 @@ import com.vincentcodes.ooxml.word.WordParagraph;
 import com.vincentcodes.ooxml.word.WordTable;
 import com.vincentcodes.ooxml.word.WordTextStyles;
 
-import org.apache.poi.xwpf.usermodel.TableWidthType;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
 
 public class OoxmlWordRenderer implements Renderer{
     private boolean createToc = false;
@@ -68,7 +68,29 @@ public class OoxmlWordRenderer implements Renderer{
 
     private void addTextToParagraph(TextNode texts, WordParagraph para){
         for(TextGroup g : texts.groups){
-            if(g.isImage) continue; // do not support images yet
+            // do not fully support images yet
+            if(g.isImage){
+                if(!g.url.startsWith("data:"))
+                    continue;
+                int colonIndex = g.url.indexOf(':');
+                int semicolonIndex = g.url.indexOf(';');
+                int comma = g.url.indexOf(',');
+                if(colonIndex == -1 || semicolonIndex == -1 || comma == -1)
+                    continue;
+                String imageType = g.url.substring(colonIndex+1, semicolonIndex).toLowerCase();
+                ByteArrayInputStream bais = new ByteArrayInputStream(Base64.getDecoder().decode(g.url.substring(comma+1)));
+                try{
+                    if(imageType.endsWith("png")){
+                        para.insertPng(bais, "", 150);
+                    }else if(imageType.endsWith("jpeg")){
+                        para.insertJpeg(bais, "", 150);
+                    }else if(imageType.endsWith("gif")){
+                        para.insertGif(bais, "", 150);
+                    }
+                }catch(IOException e){
+                    throw new UncheckedIOException(e);
+                }
+            }
             
             if(g.isLink){
                 WordTextStyles linkStyle = getTextStyles(g);
