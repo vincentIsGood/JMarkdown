@@ -7,19 +7,23 @@ Since the MarkdownParser is still in development, there could be bugs.
 
 ## Command line usage
 
-`jmarkdown-cmdutil-vx.y.z.jar` is released. And The general syntax for the command line is as follows.
+`jmarkdown-cmdutil-vx.y.z.jar` is released. And The general syntax for the command line is as follows. Since v2.0.0 release, command line options are added and everything is different. The old version will not be documented here.
 
-```sh
-java -jar jmarkdown-cmdutil-vx.y.z.jar <md2html / md2doc> in.md out.ext
+```
+jmarkdown-cmdutil-vx.y.z.jar <md2html / md2doc> [options]
+    -h              print help
+    -o <file>       output file
+    -i <file>       input file
+    --styles <file> style file with .docx file extension
+    --toc           create table of contents (for ooxml word only)
 ```
 
-
-Markdown to ooxml word is a little bit different, there is an additional optional argument called `[<styles file>]`. The parser will open the file and read the pre-defined styles from the .docx file. Since the generator relies on pre-defined header styles, you need to named them in form of `Header#`. For example `Header1`, `Header2`, so on and so forth. 
+Markdown to ooxml word is a little bit different, there is an option called `--styles`. The parser will open the file and read the pre-defined styles from the .docx file. Since the generator relies on pre-defined header styles, you need to named them in form of `Header#`. For example `Header1`, `Header2`, so on and so forth. 
 
 Let's say you have a style file named `styles_and_themes.docx`, then the command becomes:
 
 ```sh
-java -jar jmarkdown-cmdutil-vx.y.z.jar md2doc in.md out.docx styles_and_themes.docx
+java -jar jmarkdown-cmdutil-vx.y.z.jar md2doc -i in.md -o out.docx --styles styles_and_themes.docx
 ```
 
 
