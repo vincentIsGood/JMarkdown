@@ -15,7 +15,9 @@ import com.vincentcodes.ooxml.word.WordParagraph;
 import com.vincentcodes.ooxml.word.WordTable;
 import com.vincentcodes.ooxml.word.WordTextStyles;
 
+import org.apache.poi.xwpf.usermodel.TableWidthType;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
 
 public class OoxmlWordRenderer implements Renderer{
     private boolean createToc = false;
@@ -197,8 +199,9 @@ public class OoxmlWordRenderer implements Renderer{
     @Override
     public void codeblock(String text, String lang) {
         WordTable table = document.createTable();
+        table.setWidth(document.getEffWidth());
+
         // lower level stuff
-        
         XWPFTableCell codeBlock = table.getRaw().createRow().addNewTableCell();
         codeBlock.removeParagraph(0); // clear it
         table.setBgColorForCell(0, 0, "e7e6e6");

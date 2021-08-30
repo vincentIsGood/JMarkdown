@@ -23,7 +23,7 @@ public class Main {
         CommandLineParser parser = new CommandLineParser(config);
         Command result = parser.parse(args);
 
-        if(result.hasOption("-h")){
+        if(result.hasOption("-h") || result.getParameters().size() == 0){
             printHelpAndExit();
         }
 
