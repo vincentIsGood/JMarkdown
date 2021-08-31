@@ -11,7 +11,10 @@ public class TemplateParsingToWordTest {
     public static void main(String[] args) throws IOException{
         try(FileInputStream fis = new FileInputStream("README.md")){
             MarkdownParser parser = new MarkdownParser(new OoxmlWordRenderer(new File("out.docx"), new File("./classes/Styles.docx")));
+            
+            long startingTime = System.currentTimeMillis();
             parser.parse(new String(fis.readAllBytes()));
+            System.out.println("Time taken to parse and generate docx: " + (System.currentTimeMillis() - startingTime) + "ms");
         }
     }
 }

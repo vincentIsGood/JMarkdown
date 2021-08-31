@@ -42,7 +42,7 @@ public class MarkdownParseInlineTextTest {
     }
 
     @Test
-    void testParseText_code() {
+    void testParseText_code1() {
         var parser = new MarkdownParser(null);
         parser.setText("asd*as`*asd`");
         TextNode result = parser.parseText();
@@ -51,6 +51,25 @@ public class MarkdownParseInlineTextTest {
         
         assertEquals("*asd", result.groups.get(1).value);
         assertTrue(result.groups.get(1).isCode);
+    }
+
+    @Test
+    void testParseText_code2() {
+        var parser = new MarkdownParser(null);
+        parser.setText("asd**as`asd` text**");
+        TextNode result = parser.parseText();
+        System.out.println(result);
+        assertTrue(result.groups.size() == 4);
+        assertEquals("asd", result.groups.get(0).value);
+        
+        assertEquals("as", result.groups.get(1).value);
+        assertTrue(result.groups.get(1).isStrong);
+        
+        assertEquals("asd", result.groups.get(2).value);
+        assertTrue(result.groups.get(2).isCode);
+        
+        assertEquals(" text", result.groups.get(3).value);
+        assertTrue(result.groups.get(3).isStrong);
     }
 
     @Test

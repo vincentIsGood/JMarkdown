@@ -9,6 +9,7 @@ v3.0.2 - an empty new line after any types of heading will not be translated as 
 v3.1.0 - added support for a simpler table syntax
 v3.1.1 - bug fix for the width of tables of code blocks when opened in OpenOffice
 v3.2.0 - added support to insert image to doc (OoxmlWordRenderer change)
+v3.2.1 - inline code bug fix (allow inline code to be inside bold or itatic, etc...)
 
 ## Cmd
 v1.0.0 - md2html and md2doc are available for use
@@ -17,3 +18,4 @@ v2.1.0 - added support for a simpler table syntax
 v2.1.1 - important bug fix for the command line
 v2.1.2 - bug fix for the width of tables of code blocks when opened in OpenOffice
 v2.2.0 - added support to insert image to doc
+v2.2.1 - catering for changes within v3.2.1

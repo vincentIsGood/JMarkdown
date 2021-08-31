@@ -1,6 +1,6 @@
 @echo off
 
-set jarname=jmarkdown-v3.2.0
+set jarname=jmarkdown-v3.2.1
 set structure=*
 
 :: without Manifest

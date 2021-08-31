@@ -13,6 +13,10 @@ import com.vincentcodes.markdown.renderer.Renderer;
  * Since I didn't really read the original specification 
  * of markdown files, there could be some missing 
  * functions.
+ * <p>
+ * If anyone is looking for improving this parser, the 
+ * two important functions are {@link #parse(String)} and
+ * {@link #parseText()}.
  * 
  * @author Vincent Ko
  * @see https://www.markdownguide.org/cheat-sheet/
@@ -190,40 +194,52 @@ public class MarkdownParser{
     }
     /**
      * Can reach another char to form a pair
-     * '`' and '\n' acts as a barrier
+     * '\n' acts as a barrier. And the char is not inside inline code
      */
     private boolean canReachChar(char c, boolean ignoreCharAfterSpace){
-        int codeInlinePos = findCharOnSameLine('`', currentIndex + 1);
+        int codeInlineStartingPos = findCharOnSameLine('`', currentIndex + 1);
+        int codeInlineEndingingPos = findCharOnSameLine('`', codeInlineStartingPos + 1);
         int pairPos = findCharOnSameLine(c, currentIndex + 1);
 
         boolean leftIsSpace = (pairPos - 1 >= 0 && isSpace(pairPos-1)) || pairPos - 1 < 0;
-        while(ignoreCharAfterSpace && pairPos != -1 && leftIsSpace){
+        boolean insideInlineCode = codeInlineStartingPos < pairPos && pairPos < codeInlineEndingingPos;
+        while(ignoreCharAfterSpace && pairPos != -1 && leftIsSpace && !insideInlineCode){
             pairPos = findCharOnSameLine(c, pairPos + 1);
             leftIsSpace = (pairPos - 1 >= 0 && isSpace(pairPos-1)) || pairPos - 1 < 0;
+            insideInlineCode = codeInlineStartingPos < pairPos && pairPos < codeInlineEndingingPos;
         }
         
         // eol also counts as space
         boolean rightIsSpace = (pairPos + 1 < text.length() && isSpace(pairPos+1)) || pairPos + 1 >= text.length();
         boolean isSurroundedBySpaces = leftIsSpace && rightIsSpace;
         
-        if(codeInlinePos != -1)
-            return pairPos != -1 && codeInlinePos > pairPos && !isSurroundedBySpaces;
+        if(codeInlineStartingPos != -1)
+            return pairPos != -1 && !insideInlineCode && !isSurroundedBySpaces;
         return pairPos != -1 && !isSurroundedBySpaces;
     }
     /**
      * Can reach another String to form a pair
-     * '`' and '\n'  acts as a barrier
+     * '\n' acts as a barrier. And the char is not inside inline code
      */
-    public boolean canReachStr(String c){
-        int codeInlinePos = findCharOnSameLine('`', currentIndex + 1);
+    public boolean canReachStr(String c, boolean ignoreCharAfterSpace){
+        int codeInlineStartingPos = findCharOnSameLine('`', currentIndex + 1);
+        int codeInlineEndingingPos = findCharOnSameLine('`', codeInlineStartingPos + 1);
         int pairPos = findStrOnSameLine(c, currentIndex + 1);
 
-        // eol also counts as space
         boolean leftIsSpace = (pairPos - 1 >= 0 && isSpace(pairPos-1)) || pairPos - 1 < 0;
-        boolean rightIsSpace = (pairPos+c.length() < text.length() && isSpace(pairPos+c.length())) || pairPos+c.length() >= text.length();
+        boolean insideInlineCode = codeInlineStartingPos < pairPos && pairPos < codeInlineEndingingPos;
+        while(ignoreCharAfterSpace && pairPos != -1 && leftIsSpace && !insideInlineCode){
+            pairPos = findStrOnSameLine(c, pairPos + 1);
+            leftIsSpace = (pairPos - 1 >= 0 && isSpace(pairPos-1)) || pairPos - 1 < 0;
+            insideInlineCode = codeInlineStartingPos < pairPos && pairPos < codeInlineEndingingPos;
+        }
+        
+        // eol also counts as space
+        boolean rightIsSpace = (pairPos + 1 < text.length() && isSpace(pairPos+1)) || pairPos + 1 >= text.length();
         boolean isSurroundedBySpaces = leftIsSpace && rightIsSpace;
-        if(codeInlinePos != -1)
-            return pairPos != -1 && codeInlinePos > pairPos && !isSurroundedBySpaces;
+        
+        if(codeInlineStartingPos != -1)
+            return pairPos != -1 && !insideInlineCode && !isSurroundedBySpaces;
         return pairPos != -1 && !isSurroundedBySpaces;
     }
     private int numOfCharInString(String str, char c){
@@ -605,7 +621,7 @@ public class MarkdownParser{
     private boolean parseDoubleAsterisk(TextNode node, TextGroup inEffect, StringBuilder builder){
         boolean isSurroundedWithSpaces = peekPreviousChar() == ' ' && (peekNChar(3) != null && peekNChar(3).charAt(2) == ' ');
         if(currentChar() == '*' && peekNextChar() == '*' && !isSurroundedWithSpaces){
-            if(!inEffect.isStrong && canReachStr("**")){
+            if(!inEffect.isStrong && canReachStr("**", true)){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isStrong = true;
                 next(); // goto 2nd '*'
@@ -639,7 +655,7 @@ public class MarkdownParser{
         boolean isSurroundedBySpaces = peekPreviousChar() == ' ' && (peekNChar(3) != null && peekNChar(3).charAt(2) == ' ');
         boolean isSurroundedByAlphaNum = Character.toString(peekPreviousChar()).matches("[0-9a-zA-Z]") && peekNChar(3) != null && Character.toString(peekNChar(3).charAt(2)).matches("[0-9a-zA-Z]");
         if(currentChar() == '_' && peekNextChar() == '_' && !(isSurroundedBySpaces || isSurroundedByAlphaNum)){
-            if(!inEffect.isStrong && canReachStr("__")){
+            if(!inEffect.isStrong && canReachStr("__", false)){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isStrong = true;
                 next(); // goto 2nd '_'
@@ -656,7 +672,7 @@ public class MarkdownParser{
     private boolean parseDoubleTilde(TextNode node, TextGroup inEffect, StringBuilder builder){
         boolean isSurroundedBySpaces = peekPreviousChar() == ' ' && (peekNChar(3) != null && peekNChar(3).charAt(2) == ' ');
         if(currentChar() == '~' && peekNextChar() == '~' && !isSurroundedBySpaces){
-            if(!inEffect.isStrikeThrough && canReachStr("~~")){
+            if(!inEffect.isStrikeThrough && canReachStr("~~", true)){
                 createGroupToNode(node, inEffect, builder);
                 inEffect.isStrikeThrough = true;
                 next(); // goto 2nd '~'

@@ -7,20 +7,13 @@ public class ManualTest {
     public static void main(String[] args){
         MarkdownParser parser = new MarkdownParser(new SimpleRenderer());
         // parser.parse("""
-        // ~~a~~|b|*cd*
-        // -|-|-|-
-        // a|b|f|asd
-        // a|**b**|f|asd
-        // a|b|f
-        // **asdqwe**
+        // 1. adsas
+        // 2. bdsad
+        //    - oke test
+        // 3. ddas
+        //    - ok 321
         // """);
-        parser.parse("""
-        |a|**b**|cd|
-        |-|-|-|-|-
-        |~~1~~|2|f|e|ads
-        |3|4|f|asd
-        |a|b|f|asd
-        *asd*
-        """);
+        parser.setText("asd**as`asd` text**");
+        System.out.println(parser.parseText());
     }
 }
