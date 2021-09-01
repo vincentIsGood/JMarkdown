@@ -86,6 +86,27 @@ public class SimpleRenderer implements Renderer{
         System.out.println("Adding text to ul: " + Arrays.toString(texts));
     }
 
+    public void ol() {
+        body.add(new Container("ol", null));
+        System.out.println("ol");
+    }
+    public void ul() {
+        body.add(new Container("ul", null));
+        System.out.println("ul");
+    }
+    public void li(TextNode texts) {
+        body.add(new Container("li", texts));
+        System.out.println("li: " + texts.toString());
+    }
+    public void endol() {
+        body.add(new Container("endol", null));
+        System.out.println("end ol");
+    }
+    public void endul() {
+        body.add(new Container("endul", null));
+        System.out.println("end ul");
+    }
+
     // Table
     public void table(TextNode[] headings){
         body.add(new Container("table", headings));

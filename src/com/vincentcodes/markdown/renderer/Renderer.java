@@ -39,13 +39,13 @@ public interface Renderer {
 
     // Lists
     /**
-     * Ordered list (ol)
+     * Tools to create your own list (optional)
      */
-    void ol(TextNode[] texts);
-    /**
-     * Unordered list (ul)
-     */
-    void ul(TextNode[] texts);
+    default void ol() {}
+    default void ul() {}
+    default void li(TextNode text) {}
+    default void endol() {}
+    default void endul() {}
 
     // Table
     void table(TextNode[] headings);

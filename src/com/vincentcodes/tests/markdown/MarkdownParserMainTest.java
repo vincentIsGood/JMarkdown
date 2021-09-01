@@ -51,32 +51,72 @@ public class MarkdownParserMainTest {
     void testParse_ordered_list() {
         var renderer = new SimpleRenderer();
         var parser = new MarkdownParser(renderer);
-        parser.parse("1. a*sd,2. qw*e\n2. re*al");
+        parser.parse("""
+        1. ad*sa*s
+        as*ds*ad
+        2. bd*sa*d
+        new line
+           - oke t*es*t
+        3. ddas
+           - o*k 3*21
+        """);
 
         List<Container> result = renderer.body;
         assertEquals("ol", result.get(0).type);
+        assertEquals("li", result.get(1).type);
+        assertEquals("ds", ((TextNode)result.get(1).value).groups.get(3).value);
+        assertTrue(((TextNode)result.get(1).value).groups.get(3).isEmphasis);
 
-        TextNode[] listItems = (TextNode[])result.get(0).value;
-        assertEquals("sd,2. qw", listItems[0].groups.get(1).value);
-        assertTrue(listItems[0].groups.get(1).isEmphasis);
+        assertEquals("li", result.get(2).type);
+        assertEquals("d new line", ((TextNode)result.get(2).value).groups.get(2).value);
         
-        assertEquals("re*al", listItems[1].groups.get(0).value);
+        assertEquals("ul", result.get(3).type);
+        assertEquals("li", result.get(4).type);
+        assertEquals("endul", result.get(5).type);
+
+        assertEquals("li", result.get(6).type);
+
+        assertEquals("ul", result.get(7).type);
+        assertEquals("li", result.get(8).type);
+        assertEquals("endul", result.get(9).type);
+
+        assertEquals("endol", result.get(10).type);
     }
 
     @Test
     void testParse_unordered_list() {
         var renderer = new SimpleRenderer();
         var parser = new MarkdownParser(renderer);
-        parser.parse("- **asd,- qwe**\n- re**al");
+        parser.parse("""
+        - ad*sa*s
+        as*ds*ad
+        - bd*sa*d
+        new line
+           1. oke t*es*t
+        - ddas
+           2. o*k 3*21
+        """);
 
         List<Container> result = renderer.body;
         assertEquals("ul", result.get(0).type);
+        assertEquals("li", result.get(1).type);
+        assertEquals("ds", ((TextNode)result.get(1).value).groups.get(3).value);
+        assertTrue(((TextNode)result.get(1).value).groups.get(3).isEmphasis);
 
-        TextNode[] listItems = (TextNode[])result.get(0).value;
-        assertEquals("asd,- qwe", listItems[0].groups.get(0).value);
-        assertTrue(listItems[0].groups.get(0).isStrong);
+        assertEquals("li", result.get(2).type);
+        assertEquals("d new line", ((TextNode)result.get(2).value).groups.get(2).value);
         
-        assertEquals("re**al", listItems[1].groups.get(0).value);
+        assertEquals("ol", result.get(3).type);
+        assertEquals("li", result.get(4).type);
+        assertEquals("endol", result.get(5).type);
+
+        assertEquals("li", result.get(6).type);
+
+        assertEquals("ol", result.get(7).type);
+        assertEquals("li", result.get(8).type);
+        assertEquals("endol", result.get(9).type);
+
+        assertEquals("endul", result.get(10).type);
     }
 
     @Test

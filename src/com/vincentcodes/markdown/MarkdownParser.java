@@ -1,8 +1,5 @@
 package com.vincentcodes.markdown;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.vincentcodes.markdown.inline.TextGroup;
 import com.vincentcodes.markdown.inline.TextNode;
 import com.vincentcodes.markdown.renderer.Renderer;
@@ -71,7 +68,7 @@ public class MarkdownParser{
      * Includes the current char
      * @return null if eof is reached
      */
-    public String peekUntilLineEnd(int startOffset){
+    private String peekUntilLineEnd(int startOffset){
         if(currentIndex+startOffset+1 >= text.length()) 
             return null;
         int cIndex = currentIndex + startOffset;
@@ -221,7 +218,7 @@ public class MarkdownParser{
      * Can reach another String to form a pair
      * '\n' acts as a barrier. And the char is not inside inline code
      */
-    public boolean canReachStr(String c, boolean ignoreCharAfterSpace){
+    private boolean canReachStr(String c, boolean ignoreCharAfterSpace){
         int codeInlineStartingPos = findCharOnSameLine('`', currentIndex + 1);
         int codeInlineEndingingPos = findCharOnSameLine('`', codeInlineStartingPos + 1);
         int pairPos = findStrOnSameLine(c, currentIndex + 1);
@@ -270,7 +267,7 @@ public class MarkdownParser{
      */
     public void parse(String text, int startOffset){
         reset();
-        this.text = text;
+        setText(text);
         currentIndex = startOffset;
         
         renderer.body();
@@ -278,8 +275,8 @@ public class MarkdownParser{
             if(parseHrLine()) continue;
             if(parseHeading()) continue;
             if(parseQuoteBlock()) continue;
-            if(parseOrderedListItem()) continue;
-            if(parseUnorderedListItem()) continue;
+            if(parseOrderedList()) continue;
+            if(parseUnorderedList()) continue;
             if(parseTable()) continue;
             if(parseCodeBlock()) continue;
 
@@ -353,6 +350,7 @@ public class MarkdownParser{
                     getUntilLineEnd(); // completed this line
                 }
                 lines.deleteCharAt(lines.length()-1); // delete '\n'
+                // provide specific lines to be parsed
                 MarkdownParser innerParser = new MarkdownParser(null);
                 innerParser.setText(lines.toString());
                 renderer.blockquote(innerParser.parseText(), numOfArrow);
@@ -363,52 +361,180 @@ public class MarkdownParser{
         }
         return false;
     }
-    private boolean parseOrderedListItem(){
-        if(incomingOrderedList()){
-            List<TextNode> listItems = new ArrayList<>();
-            while(incomingOrderedList()){
-                // strip num
-                TextNode node = parseText();
-                TextGroup textGroup = node.groups.get(0);
-                textGroup.value = textGroup.value.substring(textGroup.value.indexOf(' ')+1); // skip ' ' itself
-                // just in case "1. *asd*" happens where "1. " becomes "" (empty)
-                if(textGroup.value.equals("")) 
-                    node.groups.remove(0);
-                listItems.add(node);
-                next();
+
+    // ----------------- Start of List Parsing ----------------- //
+    private boolean parseOrderedList(){
+        if(incomingOlItem()){
+            MarkdownParser inlineParser = new MarkdownParser(null);
+            renderer.ol();
+            boolean indentedOl = false;
+            int previousLeadingSpaces = 0;
+            while(incomingOlItem() || incomingIndentedOlItem() || incomingIndentedUlItem()){
+                // create new list / end a list if indentation is changed
+                /**
+                 * This is fine:
+                 * (ol)
+                 * 1. asd
+                 *     - asd  (ul)
+                 *     - asd  (ul) same level do nothing
+                 *   2. feqwe (endul) 
+                 * (endol)
+                 */
+                int cLineLeadingSpaces = 0;
+                if((cLineLeadingSpaces = findNoOfLeadingSpaces(peekUntilLineEnd(0))) > previousLeadingSpaces){
+                    previousLeadingSpaces = cLineLeadingSpaces;
+                    if(incomingIndentedOlItem()){
+                        renderer.ol();
+                        indentedOl = true;
+                    }else if(incomingIndentedUlItem()){
+                       renderer.ul();
+                       indentedOl = false;
+                    }
+                }else if(cLineLeadingSpaces < previousLeadingSpaces){
+                    previousLeadingSpaces = cLineLeadingSpaces;
+                    if(previousLeadingSpaces < 0){
+                        previousLeadingSpaces = 0;
+                    }
+                    if(indentedOl){
+                        renderer.endol();
+                    }else{
+                       renderer.endul();
+                    }
+                }
+                parseListItem(inlineParser);
             }
-            renderer.ol(listItems.toArray(TextNode[]::new));
+            // close the opened ones because of this pattern
+            /**
+             * 1. asdasd
+             *    - something
+             */
+            if(previousLeadingSpaces > 0){
+                if(indentedOl){
+                    renderer.endol();
+                }else{
+                   renderer.endul();
+                }
+            }
+            renderer.endol();
             return true;
         }
         return false;
     }
-    private boolean incomingOrderedList(){
+    private boolean parseUnorderedList(){
+        if(incomingUlItem()){
+            MarkdownParser inlineParser = new MarkdownParser(null);
+            renderer.ul();
+            boolean indentedOl = false;
+            int previousLeadingSpaces = 0;
+            while(incomingUlItem() || incomingIndentedOlItem() || incomingIndentedUlItem()){
+                // create new list / end a list if indentation is changed
+                // see #parseOrderedList()
+                int cLineLeadingSpaces = 0;
+                if((cLineLeadingSpaces = findNoOfLeadingSpaces(peekUntilLineEnd(0))) > previousLeadingSpaces){
+                    previousLeadingSpaces = cLineLeadingSpaces;
+                    if(incomingIndentedOlItem()){
+                        renderer.ol();
+                        indentedOl = true;
+                    }else if(incomingIndentedUlItem()){
+                       renderer.ul();
+                       indentedOl = false;
+                    }
+                }else if(cLineLeadingSpaces < previousLeadingSpaces){
+                    previousLeadingSpaces = cLineLeadingSpaces;
+                    if(previousLeadingSpaces < 0){
+                        previousLeadingSpaces = 0;
+                    }
+                    if(indentedOl){
+                        renderer.endol();
+                    }else{
+                       renderer.endul();
+                    }
+                }
+                parseListItem(inlineParser);
+            }
+            // close the opened ones
+            if(previousLeadingSpaces > 0){
+                if(indentedOl){
+                    renderer.endol();
+                }else{
+                   renderer.endul();
+                }
+            }
+            renderer.endul();
+            return true;
+        }
+        return false;
+    }
+    /**
+     * For double line feed to terminate a list item, the 
+     * parser expects minimal indentation on the next line 
+     * (2 spaces to be exact).
+     * <p>
+     * Will invoke {@code renderer.li()}. Hence, it's void
+     */
+    private void parseListItem(MarkdownParser inlineParser){
+        inlineParser.reset();
+        String line = getUntilLineEnd();
+        if(line == null)
+            return;
+
+        StringBuilder builder = new StringBuilder();
+        int offsetLeadingSpaces = findNoOfLeadingSpaces(line);
+        boolean hasIndentation = false;
+
+        line = line.substring(line.indexOf(' ', offsetLeadingSpaces)+1); // stip leading num / bullet
+        builder.append(line).append('\n');
+        while(true){
+            line = peekUntilLineEnd(0);
+            if(line == null){
+                break;
+            }else{
+                // expects 2 spaces or more
+                if(!hasIndentation && findNoOfLeadingSpaces(line) > 1)
+                    hasIndentation = true;
+                if(!hasIndentation && line.trim().isEmpty()){
+                    break;
+                }
+                if(matchesPatternsForNewParagraph(line)
+                || incomingIndentedOlItem() || incomingIndentedUlItem()){
+                    break;
+                }
+            }
+            builder.append(line).append('\n');
+            getUntilLineEnd(); // skip the current line
+        }
+        if(builder.charAt(builder.length()-1) == '\n')
+            builder.deleteCharAt(builder.length()-1); // delete '\n'
+        inlineParser.setText(builder.toString());
+        renderer.li(inlineParser.parseText('\0', false, true));
+    }
+    private int findNoOfLeadingSpaces(String str){
+        int noOfSpaces = 1;
+        while(noOfSpaces < str.length() && str.substring(0, noOfSpaces).trim().equals("")){
+            noOfSpaces++;
+        }
+        return noOfSpaces-1;
+    }
+    private boolean incomingOlItem(){
         return currentChar() >= '0' && currentChar() <= '9'
         && peekUntilLineEnd(0).matches("^[0-9]{1,}\\. (.*)");
     }
-    private boolean parseUnorderedListItem(){
-        if(incomingUnorderedList()){
-            List<TextNode> listItems = new ArrayList<>();
-            while(incomingUnorderedList()){
-                // strip bullet point (ie. -*+)
-                TextNode node = parseText();
-                TextGroup textGroup = node.groups.get(0);
-                textGroup.value = textGroup.value.substring(textGroup.value.indexOf(' ')+1); // skip ' ' itself
-                if(textGroup.value.equals("")) 
-                    node.groups.remove(0);
-                listItems.add(node);
-                next();
-            }
-            renderer.ul(listItems.toArray(TextNode[]::new));
-            return true;
-        }
-        return false;
+    private boolean incomingIndentedOlItem(){
+        // use currentChar() == ' ' to ensure performance, kind of
+        return currentChar() == ' ' && peekNextChar() == ' '
+        && peekUntilLineEnd(0).matches("^(\\s{2,})[0-9]{1,}\\. (.*)");
     }
-    private boolean incomingUnorderedList(){
+    private boolean incomingUlItem(){
         return (currentChar() == '-'
         || currentChar() == '*'
         || currentChar() == '+') && peekUntilLineEnd(0).matches("^[-\\*+] (.*)");
     }
+    private boolean incomingIndentedUlItem(){
+        return currentChar() == ' ' && peekNextChar() == ' '
+        && peekUntilLineEnd(0).matches("^(\\s{2,})[-\\*+] (.*)");
+    }
+    // ----------------- End of List Parsing ----------------- //
+
     private boolean parseTable(){
         String currentLine = peekUntilLineEnd(0);
         if(currentLine == null) 
@@ -460,7 +586,7 @@ public class MarkdownParser{
         
         TextNode[] cellsValue = new TextNode[noOfCells == -1? numOfCharInString(peekedLine, '|')+1 : noOfCells];
         for(int i = 0; i < cellsValue.length; i++){
-            cellsValue[i] = parseText('|', true);
+            cellsValue[i] = parseText('|', true, false);
             if(cellsValue[i].groups.size() > 0){
                 TextGroup textGroup = cellsValue[i].groups.get(0);
                 textGroup.value = textGroup.value.trim();
@@ -494,22 +620,37 @@ public class MarkdownParser{
 
 
     // Parse Inline Text //
+    private boolean matchesPatternsForNewParagraph(String string){
+        if(string.matches("^[0-9]{1,}\\. (.*)"))
+            return true;
+        if(string.matches("^[-\\*+] (.*)"))
+            return true;
+        if(string.matches("^#(.*)"))
+            return true;
+        if(string.matches("^>(.*)"))
+            return true;
+        if(string.matches("^```(.*)"))
+            return true;
+        return false;
+    }
 
     /**
+     * Internal API.
+     * <p>
      * Not recommended to call this method. This 
-     * is set public for testing purposes only
+     * is set public for testing purposes only.
      */
     public TextNode parseText(){
-        return parseText('\0', false);
+        return parseText('\0', false, false);
     }
     public TextNode parseText(boolean terminateOnOneNewLine){
-        return parseText('\0', terminateOnOneNewLine);
+        return parseText('\0', terminateOnOneNewLine, false);
     }
     /**
      * Not recommended to call this method. This 
      * is set public for testing purposes only
      */
-    public TextNode parseText(char additionalTerminator, boolean terminateOnOneNewLine){
+    public TextNode parseText(char additionalTerminator, boolean terminateOnOneNewLine, boolean allowDoubleLineFeeds){
         TextNode node = new TextNode();
         TextGroup inEffect = new TextGroup();
         StringBuilder builder = new StringBuilder();
@@ -533,26 +674,37 @@ public class MarkdownParser{
                 //// Specific to parse() because parse() has next() itself
                 if(terminateOnOneNewLine) 
                     break;
-                // for ol and ul, I have to use Regex here to look ahead for simplicity
-                // read until the next bullet point / item
-                if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^[0-9]{1,}\\. (.*)"))
-                    break;
-                if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^[-\\*+] (.*)"))
-                    break;
-                if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^#(.*)"))
-                    break;
-                if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^>(.*)"))
-                    break;
-                if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).matches("^```(.*)"))
-                    break;
-                //// End
-
+                
                 // offset 1 to skip '\n'
-                if(peekUntilLineEnd(1) != null && peekUntilLineEnd(1).trim().equals("")){
-                    next(); // add 1 to skip '\n' (used for parseText() exit)
-                    break;
+                String nextLine = peekUntilLineEnd(1);
+                if(nextLine != null){
+                    // I have to use Regex here to look ahead for simplicity
+                    if(matchesPatternsForNewParagraph(nextLine))
+                        break;
+
+                    // next line is empty
+                    if(nextLine.trim().equals("")){
+                        if(!allowDoubleLineFeeds){
+                            next(); // add 1 to skip '\n' (used for parseText() exit)
+                            break;
+                        }else{
+                            /**
+                             * This is allowed:
+                             * asd asd
+                             * asd
+                             * 
+                             * asd
+                             * To become: 
+                             * asd asd asd
+                             * asd
+                             */
+                            inEffect = new TextGroup(); // reset styles
+                            builder.append("\n");
+                            continue;
+                        }
+                    }
                 }
-                // line breaks
+                // line breaks by "  " (2 space)
                 if(text.charAt(currentIndex-1) == ' ' && text.charAt(currentIndex-2) == ' '){
                     // I could have use trim() in the end, but anyways
                     builder.deleteCharAt(builder.length()-1).deleteCharAt(builder.length()-1);

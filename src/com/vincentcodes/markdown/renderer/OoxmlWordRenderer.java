@@ -30,7 +30,8 @@ public class OoxmlWordRenderer implements Renderer{
     private File themeFile;
 
     private WordDocument document;
-    private WordTable table;
+    private WordTable currentTable;
+    private WordList currentWordList;
 
     private static WordTextStyles CONSOLAS_FONT = new WordTextStyles();
 
@@ -232,26 +233,24 @@ public class OoxmlWordRenderer implements Renderer{
         WordParagraph para = document.createParagraph();
         para.insertText(text);
     }
-
-    @Override
-    public void ol(TextNode[] texts) {
-        WordList list = document.createNumberedList();
-        for(TextNode node : texts){
-            WordParagraph para = document.createParagraph();
-            addTextToParagraph(node, para);
-            list.addListItem(para);
-        }
+    
+    /**
+     * Tools to create your own list (optional)
+     */
+    public void ol() {
+        currentWordList = document.createNumberedList();
+    }
+    public void ul() {
+        currentWordList = document.createBulletList();
+    }
+    public void li(TextNode text) {
+        WordParagraph para = document.createParagraph();
+        addTextToParagraph(text, para);
+        currentWordList.addListItem(para);
     }
 
-    @Override
-    public void ul(TextNode[] texts) {
-        WordList list = document.createBulletList();
-        for(TextNode node : texts){
-            WordParagraph para = document.createParagraph();
-            addTextToParagraph(node, para);
-            list.addListItem(para);
-        }
-    }
+    public void endol() {}
+    public void endul() {}
 
     @Override
     public void table(TextNode[] headings) {
@@ -267,13 +266,12 @@ public class OoxmlWordRenderer implements Renderer{
         List<String> strEntries = Stream.of(rowEntries).map((ele)->{
             return textNodeToString(ele);
         }).collect(Collectors.toList());
-        table.addRow(strEntries);
+        currentTable.addRow(strEntries);
     }
 
+    // useless
     @Override
-    public void endTable() {
-        // No need
-    }
+    public void endTable() {}
 
     @Override
     public void codeblock(String text, String lang) {
@@ -294,18 +292,13 @@ public class OoxmlWordRenderer implements Renderer{
     }
 
     @Override
-    public void startBlockQuote() {
-        // No equivalent, style it in the future
-    }
+    public void startBlockQuote() {}
+
+    // not supported
+    @Override
+    public void blockquote(TextNode text, int level) {}
 
     @Override
-    public void blockquote(TextNode text, int level) {
-        // No equivalent, style it in the future
-    }
-
-    @Override
-    public void endBlockQuote() {
-        // No need
-    }
+    public void endBlockQuote() {}
 
 }

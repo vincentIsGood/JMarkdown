@@ -1,5 +1,8 @@
 package com.vincentcodes.markdown.renderer;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import com.vincentcodes.markdown.inline.TextGroup;
 import com.vincentcodes.markdown.inline.TextNode;
 
@@ -95,7 +98,7 @@ public class HtmlRenderer implements Renderer {
             closeStyleTags(group);
             addStyleTags(group);
             if(group.value != null)
-                builder.append(group.value);
+                builder.append(group.value.replaceAll("\n", "<br>"));
             if(group.isLink)
                 builder.append(group.desc);
         }
@@ -180,27 +183,45 @@ public class HtmlRenderer implements Renderer {
         builder.append("</div>");
     }
 
-    // Ordered list (ol)
-    @Override
-    public void ol(TextNode[] texts){
+    
+    /**
+     * Tools to create your own list (optional)
+     */
+    private Deque<Integer> unclosedLi = new ArrayDeque<>();
+    // ordered list
+    public void ol() {
+        if(builder.substring(builder.length()-5, builder.length()).equals("</li>")){
+            builder.delete(builder.length()-5, builder.length()); // delete 4 chars
+            unclosedLi.push(1);
+        }
         builder.append("<ol>");
-        for(TextNode node : texts){
-            builder.append("<li>");
-            renderInnerText(node);
-            builder.append("</li>");
-        }
-        builder.append("</ol>");
     }
-    // Unordered list (ul)
-    @Override
-    public void ul(TextNode[] texts){
-        builder.append("<ul>");
-        for(TextNode node : texts){
-            builder.append("<li>");
-            renderInnerText(node);
-            builder.append("</li>");
+    // unordered list
+    public void ul() {
+        if(builder.substring(builder.length()-5, builder.length()).equals("</li>")){
+            builder.delete(builder.length()-5, builder.length()); // delete 4 chars
+            unclosedLi.push(1);
         }
+        builder.append("<ul>");
+    }
+    public void li(TextNode text) {
+        builder.append("<li>");
+        renderInnerText(text);
+        builder.append("</li>");
+    }
+    public void endol() {
+        builder.append("</ol>");
+        if(unclosedLi.size() > 0){
+            builder.append("</li>");
+            unclosedLi.pop();
+        }
+    }
+    public void endul() {
         builder.append("</ul>");
+        if(unclosedLi.size() > 0){
+            builder.append("</li>");
+            unclosedLi.pop();
+        }
     }
 
     // Table
