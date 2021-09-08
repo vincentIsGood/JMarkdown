@@ -32,6 +32,7 @@ public class OoxmlWordRenderer implements Renderer{
     private WordDocument document;
     private WordTable currentTable;
     private WordList currentWordList;
+    private int currentListLevel = -1;
 
     private static WordTextStyles CONSOLAS_FONT = new WordTextStyles();
 
@@ -238,19 +239,31 @@ public class OoxmlWordRenderer implements Renderer{
      * Tools to create your own list (optional)
      */
     public void ol() {
-        currentWordList = document.createNumberedList();
+        if(currentListLevel == -1)
+            currentWordList = document.createNumberedList();
+        currentListLevel++;
     }
     public void ul() {
-        currentWordList = document.createBulletList();
+        if(currentListLevel == -1)
+            currentWordList = document.createBulletList();
+        currentListLevel++;
     }
     public void li(TextNode text) {
         WordParagraph para = document.createParagraph();
         addTextToParagraph(text, para);
-        currentWordList.addListItem(para);
+        currentWordList.addListItem(para, currentListLevel);
     }
 
-    public void endol() {}
-    public void endul() {}
+    public void endol() {
+        currentListLevel--;
+        if(currentListLevel < 0) 
+            currentListLevel = -1;
+    }
+    public void endul() {
+        currentListLevel--;
+        if(currentListLevel < 0) 
+            currentListLevel = -1;
+    }
 
     @Override
     public void table(TextNode[] headings) {

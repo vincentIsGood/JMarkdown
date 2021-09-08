@@ -11,6 +11,7 @@ v3.1.1 - bug fix for the width of tables of code blocks when opened in OpenOffic
 v3.2.0 - added support to insert image to doc (OoxmlWordRenderer change)
 v3.2.1 - inline code bug fix (allow inline code to be inside bold or itatic, etc...)
 v4.0.0 - Renderer interface is modified and added a few functions to the renderer regarding creating a new list
+v4.1.0 - ooxml word renderer update (see cmd util v2.4.0 change).
 
 ## Cmd
 v1.0.0 - md2html and md2doc are available for use
@@ -21,3 +22,4 @@ v2.1.2 - bug fix for the width of tables of code blocks when opened in OpenOffic
 v2.2.0 - added support to insert image to doc
 v2.2.1 - catering for changes within v3.2.1
 v2.3.0 - supports indented lists for html renderer only
+v2.4.0 - partial support added towards rendering indented lists for md2doc (ie. base list is customizable while indented lists are always bullet list)
