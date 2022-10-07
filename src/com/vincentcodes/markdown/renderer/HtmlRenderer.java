@@ -53,7 +53,7 @@ public class HtmlRenderer implements Renderer {
         }
         if(group.isImage == !currentStyle.isImage){
             if(!currentStyle.isImage){
-                builder.append("<img href='").append(group.url).append("' alt='").append(group.desc).append("'>");
+                builder.append("<img src='").append(group.url).append("' alt='").append(group.desc).append("'>");
             }
         }
     }
