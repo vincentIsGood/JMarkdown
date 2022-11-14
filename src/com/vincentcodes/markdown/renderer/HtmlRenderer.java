@@ -98,7 +98,7 @@ public class HtmlRenderer implements Renderer {
             closeStyleTags(group);
             addStyleTags(group);
             if(group.value != null)
-                builder.append(group.value.replaceAll("\n", "<br>"));
+                builder.append(group.value.replace("<", "&lt;").replaceAll("\n", "<br>"));
             if(group.isLink)
                 builder.append(group.desc);
         }
@@ -172,13 +172,13 @@ public class HtmlRenderer implements Renderer {
     // Normal texts
     @Override
     public void p(TextNode texts){
-        builder.append("<div>");
+        builder.append("<div class='para'>");
         renderInnerText(texts);
         builder.append("</div>");
     }
     @Override
     public void append(String text){
-        builder.append("<div>");
+        builder.append("<div class='appended-text'>");
         builder.append(text);
         builder.append("</div>");
     }
@@ -254,7 +254,7 @@ public class HtmlRenderer implements Renderer {
     @Override
     public void codeblock(String text, String lang){
         builder.append("<pre><code class='language-").append(lang).append("'>");
-        builder.append(text);
+        builder.append(text.replace("<", "&lt;"));
         builder.append("</code></pre>");
     }
 
@@ -309,6 +309,7 @@ public class HtmlRenderer implements Renderer {
         builder.append(".markdown-body img[align=left] {  padding-right: 20px;}.markdown-body code {  padding: .2em .4em;  margin: 0;  font-size: 85%;  background-color: rgba(27,31,35,.05);  border-radius: 3px;}.markdown-body pre {  word-wrap: normal;}");
         builder.append(".markdown-body pre>code {  padding: 0;  margin: 0;  font-size: 100%;  word-break: normal;  white-space: pre;  background: transparent;  border: 0;}.markdown-body .highlight {  margin-bottom: 16px;}.markdown-body .highlight pre {  margin-bottom: 0;  word-break: normal;}");
         builder.append(".markdown-body .highlight pre,.markdown-body pre {  padding: 16px;  overflow: auto;  font-size: 85%;  line-height: 1.45;  background-color: #f6f8fa;  border-radius: 3px;}.markdown-body pre code {  display: inline;  max-width: auto;  padding: 0;  margin: 0;  overflow: visible;  line-height: inherit;  word-wrap: normal;  background-color: initial;  border: 0;}");
+        builder.append(".para {margin-bottom: 1rem;}");
         return builder.toString();
     }
 

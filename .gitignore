@@ -3,3 +3,9 @@ others
 classes/*
 DEV_GetJar_Manual.bat
 versions
+
+*.jar
+
+lib/com/
+lib/Oo*/
+lib/unittest/

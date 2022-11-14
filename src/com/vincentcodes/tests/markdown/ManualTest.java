@@ -1,7 +1,6 @@
 package com.vincentcodes.tests.markdown;
 
 import com.vincentcodes.markdown.MarkdownParser;
-import com.vincentcodes.markdown.renderer.HtmlRenderer;
 import com.vincentcodes.tests.markdown.mock.SimpleRenderer;
 
 public class ManualTest {
