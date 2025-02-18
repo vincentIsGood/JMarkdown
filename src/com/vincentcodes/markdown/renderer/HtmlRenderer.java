@@ -10,6 +10,14 @@ public class HtmlRenderer implements Renderer {
     private StringBuilder builder = new StringBuilder();
     private TextGroup currentStyle = new TextGroup();
 
+    private boolean includeStyleTag = true;
+
+    public HtmlRenderer(){}
+
+    public HtmlRenderer(boolean includeStyleTag){
+        this.includeStyleTag = includeStyleTag;
+    }
+
     public String getRenderedHtml(){
         return builder.toString();
     }
@@ -110,11 +118,13 @@ public class HtmlRenderer implements Renderer {
     @Override
     public void body(){
         builder.append("<html>");
-        builder.append("<style>");
-        builder.append("/* Pre-defined Markdown Styles */");
-        builder.append("/* Style provided by https://github.com/sindresorhus/github-markdown-css */");
-        builder.append(getPreDefinedCss());
-        builder.append("</style>");
+        if(includeStyleTag){
+            builder.append("<style>");
+            builder.append("/* Pre-defined Markdown Styles */");
+            builder.append("/* Style provided by https://github.com/sindresorhus/github-markdown-css */");
+            builder.append(getPreDefinedCss());
+            builder.append("</style>");
+        }
         builder.append("<body class='markdown-body'>");
     }
 
